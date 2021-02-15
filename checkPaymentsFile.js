@@ -86,12 +86,12 @@ var checkallpendingpayouts = function () {
 	var payqueuearray = JSON.parse(fs.readFileSync(config.paymentqueuefile));	//read the payqueue file with all payoutjobs
 	var payoutfilenameprefix;
 	var timeout = 0;
-	payjobs = parseInt(payqueuearray.length)
+	payjobs = parseInt(payqueuearray.lessors.length)
 
-	console.log("\nFound " + payqueuearray.length + " pending pay jobs in the queue file.\n"
+	console.log("\nFound " + payqueuearray.lessors.length + " pending pay jobs in the queue file.\n"
 		   +"=============================================================================================");
 
-	payqueuearray.forEach ( function ( batchid, index ) {  //remark: index in array starts at 0!
+	payqueuearray.lessors.forEach ( function ( batchid, index ) {  //remark: index in array starts at 0!
 
                 var jobid = parseInt(index) + 1		//Sequencial jobnr just for nice screen presentation
                 payoutfilenameprefix = config.payoutfileprefix + batchid
@@ -117,13 +117,14 @@ var start = function() {
 // - jobnr: sequence nr of all jobs (starts at 1)
 
 var blocks = 0
-
+var payoutObject = {};
 function checkpayouts (filename, batchid, jobnr) {
 
 	var assets = {};
 	var assetsFound = 0;
 	var paymentsString = fs.readFileSync(filename).toString();
-	payments = JSON.parse(paymentsString);
+	payoutObject = JSON.parse(paymentsString);
+	payments = payoutObject.transactions;
 	var addmessage;
 	var message = "Job " + jobnr + ", batch ID " + batchid + ", payoutfile '" + filename + "'. "
 	payjobcounter++
@@ -131,11 +132,12 @@ function checkpayouts (filename, batchid, jobnr) {
 
 	// Read logfile for current batch and get the blocks that were forged
 	function getblocksforged () {
-        	var batchlogfile = config.payoutfileprefix + batchid + '.log'
-        	var batchlogarray = (fs.readFileSync(batchlogfile).toString()).split(os.EOL)
-        	var forgedblocksstring = batchlogarray.find(a =>a.includes("forged:"));
-		blocks += parseInt(forgedblocksstring.substring(forgedblocksstring.indexOf(":")+1,forgedblocksstring.length))
-        	return forgedblocksstring
+        // 	var batchlogfile = config.payoutfileprefix + batchid + '.log'
+        // 	var batchlogarray = (fs.readFileSync(batchlogfile).toString()).split(os.EOL)
+        // 	var forgedblocksstring = batchlogarray.find(a =>a.includes("forged:"));
+		// blocks += parseInt(forgedblocksstring.substring(forgedblocksstring.indexOf(":")+1,forgedblocksstring.length))
+        blocks += payoutObject.blocks;
+       	return payoutObject.blocks;
 	}
 
 	function constructassetsarray () {
@@ -328,7 +330,7 @@ function checkpayouts (filename, batchid, jobnr) {
 					    "Finished checking all jobs in the payment queue. The total sum of all payouts will be;\n");
 
 				if ( JSON.stringify(assetsumarray) == '{}' ) {
-					console.log("Nothing to pay.")
+					console.log("Nothing to pay." + blocks);
 				} else {
 					var i = 0;
 					for (var assetid in assetsumarray) {
