@@ -70,13 +70,16 @@ if (fs.existsSync(batchinfofile)) {
 
     var batchinfo = {
         "batchdata": {
-            "paymentid": payid,
+            "paymentids": {lessors: payid, assetHolders: {}},
             "scanstartblock": startscanblock,
             "paystartblock": paymentstartblock,
             "paystopblock": paymentstopblock
         }
     };
 
+    paymentconfigdata.assetHolders.forEach(function(assetHolder) {
+        batchinfo.batchdata.paymentids.assetHolders[assetHolder.id] = payid;
+    })
     mybatchdata = batchinfo.batchdata;
 
     console.log("\n Batchfile '" + batchinfofile + "' is missing. This seems to be the first collector session." +
@@ -463,7 +466,7 @@ var pay = function () {
         "</head>" +
         "<body>" +
         "<div class=\"container\">" +
-        "  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (Share Tx fees " + config.percentageOfFeesToDistribute + "% / Blockreward " + config.percentageOfBlockrewardToDistribute + "%)</h3>" +
+        "  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + batchinfo.batchdata.paymentids.lessors + ", (Share Tx fees " + config.percentageOfFeesToDistribute + "% / Blockreward " + config.percentageOfBlockrewardToDistribute + "%)</h3>" +
         "  <h4>(LPOS address: " + config.address + ")</h4>" +
         "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Stake-Waves.Net'. Greetings!</h5> " +
         "  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
@@ -615,10 +618,11 @@ var pay = function () {
 
 
     console.log("total Waves shared (fees + blockrewards): " + (totalfees.WAVES / 100000000).toFixed(8) + " (" + config.percentageOfFeesToDistribute + "%/" + config.percentageOfBlockrewardToDistribute + "%)");
-    var paymentfile = config.filename + config.paymentid + ".json";
-    var htmlfile = config.filename + config.paymentid + ".html";
+    var paymentfile = config.filename + batchinfo.batchdata.paymentids.lessors + ".json";
+    var htmlfile = config.filename + batchinfo.batchdata.paymentids.lessors + ".html";
+    var logfile = config.filename + batchinfo.batchdata.paymentids.lessors + ".log";
 
-    fs.writeFile(paymentfile, JSON.stringify({payid: config.paymentid, blocks: BlockCount, startblock: config.startBlockHeight, endblock: config.endBlock, transactions: transactions}), {}, function (err) {
+    fs.writeFile(paymentfile, JSON.stringify({payid: batchinfo.batchdata.paymentids.lessors, blocks: BlockCount, startblock: config.startBlockHeight, endblock: config.endBlock, transactions: transactions}), {}, function (err) {
         if (!err) {
             console.log('Planned payments written to ' + paymentfile + '!');
         } else {
@@ -628,7 +632,7 @@ var pay = function () {
 
     fs.writeFile(htmlfile, html, {}, function (err) {
         if (!err) {
-            console.log('HTML written to ' + config.filename + config.paymentid + '.html!');
+            console.log('HTML written to ' + htmlfile + '!');
         } else {
             console.log(err);
         }
@@ -640,7 +644,7 @@ var pay = function () {
         var decimals = assetInfo[asset.id].decimals;
         logString += "Total " + assetInfo[asset.id].name + " fees to lessors: " + (totalfees[asset.id] / Math.pow(10, decimals)).toFixed(decimals) + "\n";
     });
-    fs.writeFile(config.filename + config.paymentid + ".log",
+    fs.writeFile(logfile,
         "total Waves fees to lessors: " + (totalfees.WAVES / 100000000).toFixed(8) + "\n"
         + logString
         + "Total blocks forged: " + BlockCount + "\n"
@@ -653,7 +657,7 @@ var pay = function () {
         + "Following addresses are skipped for payment; \n"
         + JSON.stringify(nofeearray) + "\n", function (err) {
             if (!err) {
-                console.log('Summarized payoutinfo is written to ' + config.filename + config.paymentid + ".log!");
+                console.log('Summarized payoutinfo is written to ' + logfile + "!");
                 console.log();
             } else {
                 console.log(err);
@@ -698,7 +702,7 @@ var pay = function () {
             "<body>" +
 
             "<div class=\"container\">" +
-            "  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + config.paymentid + ", (Share Tx fees " + asset.feePercentage + "% / Blockreward " + asset.rewardsPercentage + "%)</h3>" +
+            "  <h3>Fees between blocks " + config.startBlockHeight + " - " + config.endBlock + ", Payout #" + batchinfo.batchdata.paymentids.assetHolders[asset.id] + ", (Share Tx fees " + asset.feePercentage + "% / Blockreward " + asset.rewardsPercentage + "%)</h3>" +
             "  <h4>(LPOS address: " + config.address + ")</h4>" +
             "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Stake-Waves.Net'. Greetings!</h5> " +
             "  <h5>You can always contact me by <a href=\"mailto:" + mailto + "\">E-mail</a></h5>" +
@@ -740,18 +744,19 @@ var pay = function () {
             "<div class=\"container\">* => Payout will be hold till lowest payout is reached (0.0001 WAVES)</div>" +
             "</body>" +
             "</html>";
-        fs.writeFile(asset.payoutFilePrefix + payid + '.html', html, {}, function (err) {
+        fs.writeFile(asset.payoutFilePrefix + batchinfo.batchdata.paymentids.assetHolders[asset.id] + '.html', html, {}, function (err) {
             if (err) {
                 console.log(err);
                 process.exit();
             }
         });
-        fs.writeFile(asset.payoutFilePrefix + payid + '.json', JSON.stringify({payid: config.paymentid, blocks: BlockCount, startblock: config.startBlockHeight, endblock: config.endBlock, transactions: transactions}), {}, function (err) {
+        fs.writeFile(asset.payoutFilePrefix + batchinfo.batchdata.paymentids.assetHolders[asset.id] + '.json', JSON.stringify({payid: batchinfo.batchdata.paymentids.assetHolders[asset.id], blocks: BlockCount, startblock: config.startBlockHeight, endblock: config.endBlock, transactions: transactions}), {}, function (err) {
             if (err) {
                 console.log(err);
                 process.exit();
             }
-        })
+        });
+        batchinfo.batchdata.paymentids.assetHolders[asset.id]++;
     })
 
     // Write the current payid of the batch to the payment queue file. This is used by the masspayment tool
@@ -761,14 +766,14 @@ var pay = function () {
 
         if (fs.existsSync(payqueuefile) == false) {  //There is no paymentqueue file!
 
-            console.log("\nApparently there's no payment queue file yet. Adding paymentid '" + payid + "' of current batch to queuefile " + payqueuefile);
+            console.log("\nApparently there's no payment queue file yet. Adding paymentid '" + batchinfo.batchdata.paymentids.lessors + "' of current batch to queuefile " + payqueuefile);
             console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
             console.log("Or you can verify the payment queue with the payment check tool ('start_checker' or 'node checkPayment.js').");
             console.log("All pending payments are automatically found and checked.");
             console.log("Then execute the actual payments, which transfers the revenue shares to all leasers. Start with 'node masstx'.");
             console.log("When the pay job is finished, it is automatically removed from the payment queue file.\n")
 
-            payarray = {lessors: [payid], assetHolders: {}};
+            payarray = {lessors: [batchinfo.batchdata.paymentids.lessors], assetHolders: {}};
 
         } else {       // there is a paymentqueue file!
 
@@ -783,7 +788,7 @@ var pay = function () {
             //case 1. It's empty
             if (payarray.lessors.length == 0) {
                 console.log("\nCurrently there are no payments pending in the queue.");
-                console.log("Adding paymentid '" + payid + "' to queuefile " + payqueuefile + ". This is the only payment in the queue now :-)\n");
+                console.log("Adding paymentid '" + batchinfo.batchdata.paymentids.lessors + "' to queuefile " + payqueuefile + ". This is the only payment in the queue now :-)\n");
                 console.log("You can now either start the next collector session, when finished it will automatically be added to the payment queue.");
                 console.log("Or you can verify the pending payment with the payment check tool, 'node checkPaymentsFile.js'.");
                 console.log("This will only check, not pay!");
@@ -791,12 +796,12 @@ var pay = function () {
                 console.log("This will transfer the revenue shares to all leasers!")
                 console.log("When the payment is finished, the job id is automatically removed from the payment queue file.\n")
 
-                payarray = {lessors: [payid], assetHolders: {}}
+                payarray = {lessors: [batchinfo.batchdata.paymentids.lessors], assetHolders: {}}
             }
             //case 2. It's not empty, but has paymentid duplicates waiting
-            else if (payarray.lessors.includes(payid) == true) {
+            else if (payarray.lessors.includes(batchinfo.batchdata.paymentids.lessors) == true) {
 
-                console.log("\nWARNING! Found paymentid " + payid + " already in queue. This means there has already ran a batch with this id,\n"
+                console.log("\nWARNING! Found paymentid " + batchinfo.batchdata.paymentids.lessors + " already in queue. This means there has already ran a batch with this id,\n"
                     + "for which payments were not done yet. If you expect this because you used the old batchinfo file again, then it's fine.\n"
                     + "However, if you weren't expecting a job with same paymentid in the queue (which normally shouldn't), then check logs!!!\n"
                     + "The paymentqueue stays the same and has following payments waiting: [" + payarray + "].\n"
@@ -807,7 +812,7 @@ var pay = function () {
             //case 3. It's not empty. Add current batch to queue
             else {
                 console.log("\nFound " + payarray.lessors.length + " pending payments already in queue. Adding current batch with paymentid " + payid + " to the queue.")
-                payarray.lessors.push(payid);
+                payarray.lessors.push(batchinfo.batchdata.paymentids.lessors);
                 console.log("The total queue waiting for payouts is now: " + payarray.lessors);
                 console.log("\nTIP")
                 console.log("Before you execute your payments, you can lower the needed transaction costs,");
@@ -820,14 +825,14 @@ var pay = function () {
 
         }
 
-        nextpayid = payid + 1
+        nextpayid = batchinfo.batchdata.paymentids.lessors + 1
         console.log("The next batch session will be '" + nextpayid + "'\n");
 
         config.assetHoldersPayments.forEach(function(asset) {
             if (!(asset.id in payarray.assetHolders)) {
                 payarray.assetHolders[asset.id] = [];
             }
-            payarray.assetHolders[asset.id].push(payid);
+            payarray.assetHolders[asset.id].push(batchinfo.batchdata.paymentids.assetHolders[asset.id] - 1);
         })
         fs.writeFileSync(payqueuefile, JSON.stringify(payarray), function (err) {
             if (err) {
@@ -841,9 +846,10 @@ var pay = function () {
     // update json batchdata for next collection round
     let nextbatchdata = function () {
 
-        mybatchdata["paymentid"] = payid + 1;
-        mybatchdata["paystartblock"] = paymentstopblock;
-        mybatchdata["paystopblock"] = paymentstopblock + blockwindowsize;
+        batchinfo.batchdata.paymentids.lessors++;
+        batchinfo.batchdata.paystartblock = paymentstopblock;
+        batchinfo.batchdata.paystopblock = paymentstopblock + blockwindowsize;
+
         fs.writeFile(batchinfofile, JSON.stringify(batchinfo), (err) => {
             if (err) {
                 console.log("Something went wrong updating the file:" + batchinfofile + "!");

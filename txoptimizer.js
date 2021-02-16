@@ -69,6 +69,11 @@ var startBlock = 0;
 var endBlock = 0;
 var assetInfo = {};
 var extensions = ['json', 'html', 'log'];
+var batchInfo = JSON.parse(fs.readFileSync(toolConfigData.batchinfofile));
+var firstPayIds = {};
+var startBlocks = {WAVES: 0};
+var endBlocks = {WAVES: 0};
+var blockCounts = {WAVES: 0};
 
 var start = function() {
     console.info("Get asset info");
@@ -77,20 +82,23 @@ var start = function() {
     var payments = {};
     var tokenPayments = {};
     var totalFees = {WAVES: 0};
-    var firstPayIds = {WAVES: firstPayId};
+    firstPayIds.WAVES = firstPayId;
     paymentConfigData.extraAssets.forEach(function(asset) {
         totalFees[asset.id] = 0;
+        startBlocks[asset.id] = 0;
+        endBlocks[asset.id] = 0;
+        blockCounts[asset.id] = 0;
     });
     // merge payqueue
     payqueue.lessors.forEach(function (payid) {
         // load lessorsPayOutFile
         var fileName = toolConfigData.payoutfilesprefix + payid + '.json';
         var batchInfo = JSON.parse(fs.readFileSync(fileName));
-        blockCount += batchInfo.blocks;
-        if (startBlock === 0) {
-            startBlock = batchInfo.startblock;
+        blockCounts.WAVES += batchInfo.blocks;
+        if (startBlocks.WAVES === 0) {
+            startBlocks.WAVES = batchInfo.startblock;
         }
-        endBlock = batchInfo.endblock;
+        endBlocks.WAVES = batchInfo.endblock;
         batchInfo.transactions.forEach(function (transaction) {
             if (!(transaction.recipient in payments)) {
                 payments[transaction.recipient] = {WAVES: 0, blocks: 0};
@@ -106,12 +114,12 @@ var start = function() {
         extensions.forEach(function(extension) {
             extension = '.' + extension;
             var newFileName = file + '_to_' + firstPayId + extension;
-            // fs.rename(file + extension, './' + toolConfigData.optimizerdir + '/' + newFileName, function (err) {
-            //     if (err) {
-            //         console.log(err);
-            //         process.exit();
-            //     }
-            // });
+            fs.rename(file + extension, './' + toolConfigData.optimizerdir + '/' + newFileName, function (err) {
+                if (err) {
+                    console.log(err);
+                    process.exit();
+                }
+            });
         });
     });
     paymentConfigData.assetHoldersPayments.forEach(function(assetHolder) {
@@ -120,6 +128,11 @@ var start = function() {
             var fileName = assetHolder.payoutFilePrefix + payid + '.json';
             tokenPayments[assetHolder.id] = {};
             var payOutObject = JSON.parse(fs.readFileSync(fileName));
+            if (startBlocks[assetHolder.id] == 0) {
+                startBlocks[assetHolder.id] = payOutObject.startblock;
+            }
+            endBlocks[assetHolder.id] = payOutObject.endblock;
+            blockCounts[assetHolder.id] += payOutObject.blocks;
             payOutObject.transactions.forEach(function(transaction) {
                 if (!(transaction.address in tokenPayments[assetHolder.id])) {
                     tokenPayments[assetHolder.id][transaction.recipient] = 0;
@@ -130,12 +143,12 @@ var start = function() {
             extensions.forEach(function(extension) {
                 extension = '.' + extension;
                 var newFileName = file + '_to_' + firstPayIds[assetHolder.id] + extension;
-                // fs.rename(file + extension, './' + toolConfigData.optimizerdir + '/' + newFileName, function (err) {
-                //     if (err) {
-                //         console.log(err);
-                //         process.exit();
-                //     }
-                // });
+                fs.rename(file + extension, './' + toolConfigData.optimizerdir + '/' + newFileName, function (err) {
+                    if (err) {
+                        console.log(err);
+                        process.exit();
+                    }
+                });
             });
 
             payqueue.assetHolders[assetHolder.id] = payqueue.assetHolders[assetHolder.id].filter(function(value, index, arr) {
@@ -155,11 +168,11 @@ var start = function() {
         "</head>" +
         "<body>" +
         "<div class=\"container\">" +
-        "  <h3>Fees between blocks " + startBlock + " - " + endBlock + ", Payout #" + firstPayId + ", (Share Tx fees " + paymentConfigData.feedistributionpercentage + "% / Blockreward " + paymentConfigData.blockrewarddistributionpercentage + "%)</h3>" +
+        "  <h3>Fees between blocks " + startBlocks.WAVES + " - " + endBlock.WAVES + ", Payout #" + firstPayIds.WAVES + ", (Share Tx fees " + paymentConfigData.feedistributionpercentage + "% / Blockreward " + paymentConfigData.blockrewarddistributionpercentage + "%)</h3>" +
         "  <h4>(LPOS address: " + paymentConfigData.leasewallet + ")</h4>" +
         "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Stake-Waves.Net'. Greetings!</h5> " +
         "  <h5>You can always contact me by <a href=\"mailto:" + paymentConfigData.mail + "\">E-mail</a></h5>" +
-        "  <h5>Blocks forged: " + blockCount + "</h5>" +
+        "  <h5>Blocks forged: " + blockCounts.WAVES + "</h5>" +
         "  <table class=\"table table-striped table-hover\">" +
         "    <thead> " +
         "      <tr>" +
@@ -240,7 +253,13 @@ var start = function() {
     var htmlfile = toolConfigData.payoutfilesprefix + firstPayId +  ".html";
     var logfile = toolConfigData.payoutfilesprefix + firstPayId + ".log";
 
-    var payment = {payid: firstPayId, blocks: blockCount, startblock: startBlock, endblock: endBlock, transactions: paymentTransactions};
+    var payment = {
+        payid: firstPayIds.WAVES,
+        blocks: blockCount,
+        startblock: startBlocks.WAVES,
+        endblock: endBlocks.WAVES,
+        transactions: paymentTransactions
+    };
     fs.writeFileSync(paymentfile, JSON.stringify(payment), function (err) {
         console.info(paymentfile);
         if (!err) {
@@ -267,10 +286,10 @@ var start = function() {
     fs.writeFileSync(logfile,
         "total Waves fees to lessors: " + (totalFees.WAVES / 100000000).toFixed(8) + "\n"
         + logString
-        + "Total blocks forged: " + blockCount + "\n"
-        + "Payment ID of batch session: " + firstPayId + "\n"
-        + "Payment startblock: " + startBlock + "\n"
-        + "Payment stopblock: " + endBlock + "\n"
+        + "Total blocks forged: " + blockCounts.WAVES + "\n"
+        + "Payment ID of batch session: " + firstPayIds.WAVES + "\n"
+        + "Payment startblock: " + startBlocks.WAVES + "\n"
+        + "Payment stopblock: " + endBlocks.WAVES + "\n"
         + "Distribution: " + paymentConfigData.feedistributionpercentage + "%\n"
         + "Blockreward sharing: " + paymentConfigData.blockrewarddistributionpercentage + "%\n"
         + "Following addresses are skipped for payment; \n"
@@ -282,6 +301,9 @@ var start = function() {
                 console.log(err);
             }
         });
+
+    batchInfo.batchdata.paymentids.lessors = firstPayId + 1;
+
     // End create logfile
     paymentConfigData.assetHoldersPayments.forEach(function (assetHolder) {
         paymentTransactions = [];
@@ -297,11 +319,11 @@ var start = function() {
             "</head>" +
             "<body>" +
             "<div class=\"container\">" +
-            "  <h3>Fees between blocks " + startBlock + " - " + endBlock + ", Payout #" + firstPayIds[assetHolder.id] + ", (Share Tx fees " + assetHolder.feePercentage + "% / Blockreward " + assetHolder.rewardsPercentage + "%)</h3>" +
+            "  <h3>Fees between blocks " + startBlocks[assetHolder.id] + " - " + endBlocks[assetHolder.id] + ", Payout #" + firstPayIds[assetHolder.id] + ", (Share Tx fees " + assetHolder.feePercentage + "% / Blockreward " + assetHolder.rewardsPercentage + "%)</h3>" +
             "  <h4>(LPOS address: " + paymentConfigData.leasewallet + ")</h4>" +
             "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode 'Stake-Waves.Net'. Greetings!</h5> " +
             "  <h5>You can always contact me by <a href=\"mailto:" + paymentConfigData.mail + "\">E-mail</a></h5>" +
-            "  <h5>Blocks forged: " + blockCount + "</h5>" +
+            "  <h5>Blocks forged: " + blockCounts[assetHolder.id] + "</h5>" +
             "  <table class=\"table table-striped table-hover\">" +
             "    <thead> " +
             "      <tr>" +
@@ -338,7 +360,15 @@ var start = function() {
         var paymentfile = assetHolder.payoutFilePrefix + firstPayIds[assetHolder.id] + '.json';
         var htmlfile = assetHolder.payoutFilePrefix + firstPayIds[assetHolder.id] +  ".html";
 
-        fs.writeFileSync(paymentfile, JSON.stringify(paymentTransactions), function (err) {
+        var payment = {
+            payid: firstPayIds[assetHolder.id],
+            blocks: blockCounts[assetHolder.id],
+            startblock: startBlocks[assetHolder.id],
+            endblock: endBlocks[assetHolder.id],
+            transactions: paymentTransactions
+        };
+        fs.writeFileSync(paymentfile, JSON.stringify(payment), function (err) {
+            console.info(paymentfile);
             if (!err) {
                 console.log('Planned payments written to ' + paymentfile + '!');
             } else {
@@ -354,6 +384,8 @@ var start = function() {
             }
         });
 
+        batchInfo.batchdata.paymentids.assetHolders[assetHolder.id] = firstPayIds[assetHolder.id] + 1;
+
     });
     console.info("Update payqueue file");
     payqueue.lessors = [firstPayId];
@@ -366,8 +398,6 @@ var start = function() {
             process.exit();
         }
     });
-    var batchInfo = JSON.parse(fs.readFileSync(toolConfigData.batchinfofile));
-    batchInfo.batchdata.paymentid = firstPayId + 1;
     fs.writeFileSync(toolConfigData.batchinfofile, JSON.stringify(batchInfo), function (err) {
         if (err) {
             console.error(err);

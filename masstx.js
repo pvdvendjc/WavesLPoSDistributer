@@ -2,6 +2,8 @@ var fs = require('fs');
 var request = require('request');
 const readline = require('readline');
 
+var args = process.argv.slice(2);
+
 const configfile = 'config.json'
 const masstxrunfile = 'masstx.run'
 const forgedblockstext = "blocks forged:"
@@ -35,11 +37,32 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 }
 
 var config = {
-    payoutfileprefix: payoutfilesprefix,
+    payoutfileprefix: "",
     node: myquerynode,
     apiKey: paymentconfigdata.paymentnode_apikey
 };
-
+var tokens = "lessors";
+var assetId = '';
+var assetObject = {};
+var payqueueObject = {};
+var payqueue = [];
+if (args[0] === 'lessors') {
+    config.payoutfileprefix = payoutfilesprefix;
+} else {
+    paymentconfigdata.assetHoldersPayments.forEach(function(asset) {
+        tokens = tokens + ", " + asset.shortCode;
+        if (args[0] === asset.shortCode) {
+            assetId = asset.id;
+            assetObject = asset;
+            config.payoutfileprefix = asset.payoutFilePrefix;
+        }
+    }, this);
+}
+if (config.payoutfileprefix.length === 0) {
+    console.info('No argument given, ');
+    console.info('Allowed arguments: ' + tokens);
+    process.exit();
+}
 if (paymentconfigdata['payreports']) { //payreports keys for report upload is in json file
     var payreport = paymentconfigdata['payreports']
 } else {
@@ -309,12 +332,17 @@ function testcases() {
             "\nGoodbye now!\n")
         process.exit() //Terminate
 
-    } else if (JSON.parse(fs.readFileSync(paymentqueuefile)).length == 0) {
-        console.log("Empty payqueue! Nothing to pay, goodbye :-)")
-        process.exit() //Terminate
-
     } else { //start program
-
+        payqueueObject = JSON.parse(fs.readFileSync(paymentqueuefile));
+        if (assetId !== '') {
+            payqueue = payqueueObject.assetHolders[assetId];
+        } else {
+            payqueue = payqueueObject.lessors;
+        }
+        if (payqueue.length == 0) {
+            console.log("Empty payqueue! Nothing to pay, goodbye :-)")
+            process.exit() //Terminate
+        }
         fs.closeSync(fs.openSync(masstxrunfile, 'w'))
         if (!fs.existsSync(paymentsdonedir)) {
             fs.mkdirSync(paymentsdonedir, 0o744)
@@ -331,7 +359,7 @@ function testcases() {
 */
 function getnonemptybatches(batchid) {
     batchpaymentarray = JSON.parse(fs.readFileSync(config.payoutfileprefix + batchid + '.json'), toString())
-    if (batchpaymentarray.length == 0) {
+    if (batchpaymentarray.transactions.length == 0) {
         console.log("[BatchID " + batchid + "] empty, no payouts!")
         updatepayqueuefile(newpayqueue, batchid)
     }
@@ -379,12 +407,13 @@ function collectlogfileitems(readfile) {
 */
 function getpayqueue(myfunction) {
 
-    var payqueuearray = JSON.parse(fs.readFileSync(paymentqueuefile));
-    jobs = payqueuearray.length
+    jobs = payqueue.length
     var backuppayqueue = fs.writeFileSync(paymentqueuefile + ".bak", fs.readFileSync(paymentqueuefile))	//Create backup of queuefile
     var batchpaymentarray
-    var cleanpayqueuearray = payqueuearray.filter(getnonemptybatches)	// This var is the payqueue array without zero pay jobs
+    var cleanpayqueuearray = payqueue.filter(getnonemptybatches)	// This var is the payqueue array without zero pay jobs
     newpayqueue = cleanpayqueuearray
+    console.info(cleanpayqueuearray);
+
     var txdelay = 0
     var timeoutarray = [];
     timeoutarray[0] = 0;
@@ -397,7 +426,7 @@ function getpayqueue(myfunction) {
 
         collectlogfileitems(logfilename)
 
-        batchpaymentarray = JSON.parse(fs.readFileSync(payoutfilename), toString())	//All transaction details current batch
+        batchpaymentarray = JSON.parse(fs.readFileSync(payoutfilename), toString()).transactions	//All transaction details current batch
         var wavestransactions = 0
         var mrttransactions = 0
         var transactioncount = parseInt(batchpaymentarray.length)	//how many transactions current batch
@@ -447,7 +476,13 @@ function updatepayqueuefile(array, batchid) {
 
     array.shift(console.log(printline)) //Strip batchid from array
 
-    fs.writeFile(paymentqueuefile, JSON.stringify(array), {}, function (err) {
+    if (assetId === '') {
+        payqueueObject.lessors = array;
+    } else {
+        payqueueObject.assetHolders[assetId] = array;
+    }
+
+    fs.writeFile(paymentqueuefile, JSON.stringify(payqueueObject), {}, function (err) {
         if (!err) {
         } else {
             console.log("Warning, errors writing payqueue file!\n", err);
