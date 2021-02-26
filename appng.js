@@ -77,7 +77,7 @@ if (fs.existsSync(batchinfofile)) {
         }
     };
 
-    paymentconfigdata.assetHolders.forEach(function(assetHolder) {
+    paymentconfigdata.assetHoldersPayments.forEach(function(assetHolder) {
         batchinfo.batchdata.paymentids.assetHolders[assetHolder.id] = payid;
     })
     mybatchdata = batchinfo.batchdata;
@@ -370,7 +370,7 @@ var getAllAlias = function () {
 
     var AliasArr = [];
     var Aliases = JSON.parse(request('GET', config.node + '/alias/by-address/' + config.address, {
-        'headers': {
+        'headers': {    
             'Connection': 'keep-alive'
         }
     }).getBody('utf8'));

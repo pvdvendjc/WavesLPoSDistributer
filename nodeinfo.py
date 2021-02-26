@@ -189,7 +189,7 @@ class node:
         
         
 def present_overview(args):
-
+    print(nodeinfo.balances)
     gb = nodeinfo.balances['generating']['waves']
 
     print()

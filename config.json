@@ -1,74 +1,102 @@
 {
-	"paymentconfig" : {
-		"paymentnode_api" : "http://localhost:6869",
-		"paymentnode_apikey" : "<<your api key here>>",
-		"querynode_api" : "http://localhost:6869",
-		"nodename" : "my node",
-		"feedistributionpercentage" : "90",
-		"blockrewarddistributionpercentage" : "90",
-		"mrtperblock" : "0",
-		"leasewallet" : "<<your leasewallet here>>",
-		"transactionattachment" : "NK2oQJzq7sjCvh7AjJcLjLT9Ax",
-		"firstleaserblock" : "1370000",
-		"paystartblock" : "1370000",
-		"blockwindowsize" : "5000",
-		"nopayoutaddresses" : [ ],
-		"mail" : "<<your email address>>",
-		"payreports" : {
-			"provider" : "",
-			"destination" : "",
-			"region" : "",
-			"requesturlprefix" : ""
-		},
-		"socialmedia" : {
-			"provider" : "",
-			"destination" : "",
-			"region" : ""
-		}
-	},
-	"toolbaseconfig" : {
-		"batchinfofile" : "batchinfo.json",
-		"payqueuefile" : "payqueue.dat",
-		"socialmediafile" : "socialmedia.txt",
-		"payoutfilesprefix" : "wavesleaserpayouts",
-		"paymentsdonedir" : "paymentsDone/",
-		"txbasefee" : "100000",
-		"masstransferpertxfee" : "50000",
-		"maxmasstransfertxs" : "100",
-		"transactiontimeout" : "1000",
-		"transactionapisuffix" : "/assets/transfer",
-		"masstxapisuffix" : "/assets/masstransfer",
-		"masstransferversion" : "1",
-		"relevantassets" : [ "Waves", "Mrt" ],
-		"optimizerdir": "txoptimizer"
-	},
-	"forktoolsconfig" : {
-		"controlnodes" : { },
-		"auto_rollback" : "no",
-		"lastblockheight" : "/blocks/height",
-		"blockheaders" : "/blocks/headers/at/",
-		"rollback_blocks" : "2000"
-	},
-	"telegramconfig" : {
-		"use" : "no",
-		"telegram_api" : "https://api.telegram.org/bot",
-		"telegram_token" : "",
-		"telegram_chat_id" : "",
-		"telegram_group" : "",
-		"telegram_botuser" : ""
-	},
-	"api_uris" : {
-		"node_version" : "/node/version",
-		"node_status" : "/node/status",
-		"all_peers" : "/peers/all",
-		"connected_peers" : "/peers/connected",
-		"active_leases" : "/leasing/active/{address}",
-		"address_aliasses" : "/alias/by-address/{address}",
-		"reward_status" : "/blockchain/rewards",
-		"balances" : "/addresses/balance/details/{address}",
-		"configinfo" : "/debug/configinfo",
-		"node_state" : "/debug/info",
-		"lastblock" : "/blocks/last",
-		"blockchainheight" : "/blocks/height"
-	}
+  "paymentconfig": {
+    "paymentnode_api": "http://localhost:6870",
+    "paymentnode_apikey": "WaterZoutOplossing2017",
+    "querynode_api1": "http://backup.stake-waves.net:6870",
+    "querynode_api": "http://94.130.172.201",
+    "nodename": "Stake-Waves.NET",
+    "minimumWavesPayout": 0.0001,
+    "feedistributionpercentage": 90,
+    "blockrewarddistributionpercentage": 90,
+    "mrtperblock": 0,
+    "extraAssets": [
+      {
+        "id": "DjU9JHRZfNVG22XU518hANGBRL5J12KhAihtkWnZKLNp",
+        "perBlock": 250,
+        "minPayout": 0.001
+      }
+    ],
+    "assetHoldersPayments": [
+      {
+        "id": "DjU9JHRZfNVG22XU518hANGBRL5J12KhAihtkWnZKLNp",
+        "feePercentage": 5,
+        "rewardsPercentage": 5,
+        "payoutFilePrefix": "swnHoldersPayout",
+        "shortCode": "SWN",
+        "richListAtBlock": true,
+        "richListAtPayout": false
+      }
+    ],
+    "leasewallet": "3MwWFi3qRZLSuBNfNabEqHrMDJYStLgH5mP",
+    "transactionattachment": "NK2oQJzq7sjCvh7AjJcLjLT9Ax",
+    "firstleaserblock": 1410921,
+    "paystartblock": 1410921,
+    "blockwindowsize": 1440,
+    "nopayoutaddresses": [],
+    "mail": "node@stake-waves.net",
+    "payreports": {
+      "provider": "",
+      "destination": "",
+      "region": "",
+      "requesturlprefix": ""
+    },
+    "socialmedia": {
+      "provider": "",
+      "destination": "",
+      "region": ""
+    }
+  },
+  "toolbaseconfig": {
+    "batchinfofile": "batchinfo.json",
+    "payqueuefile": "payqueue.json",
+    "currentblocksfile": "blocks.json",
+    "currentleasesfile": "leases.json",
+    "socialmediafile": "socialmedia.txt",
+    "payoutfilesprefix": "lessorspayouts",
+    "mergedPaymentsPrefix": "mergedPayouts",
+    "paymentsdonedir": "paymentsDone/",
+    "paymentsMergedDir": "paymentsMerged/",
+    "txbasefee": "100000",
+    "masstransferpertxfee": "50000",
+    "maxmasstransfertxs": "100",
+    "transactiontimeout": "1000",
+    "transactionapisuffix": "/assets/transfer",
+    "masstxapisuffix": "/assets/masstransfer",
+    "masstransferversion": "1",
+    "relevantassets": [
+      "Waves",
+      "Stake-Waves.Net"
+    ],
+    "optimizerdir": "txoptimizer"
+  },
+  "forktoolsconfig": {
+    "controlnodes": {},
+    "auto_rollback": "no",
+    "lastblockheight": "/blocks/height",
+    "blockheaders": "/blocks/headers/at/",
+    "rollback_blocks": "2000"
+  },
+  "telegramconfig": {
+    "use": "no",
+    "telegram_api": "https://api.telegram.org/bot",
+    "telegram_token": "",
+    "telegram_chat_id": "",
+    "telegram_group": "",
+    "telegram_botuser": ""
+  },
+  "api_uris": {
+    "node_version": "/node/version",
+    "node_status": "/node/status",
+    "all_peers": "/peers/all",
+    "connected_peers": "/peers/connected",
+    "active_leases": "/leasing/active/{address}",
+    "address_aliasses": "/alias/by-address/{address}",
+    "reward_status": "/blockchain/rewards",
+    "balances": "/addresses/balance/details/{address}",
+    "configinfo": "/debug/configinfo",
+    "node_state": "/debug/info",
+    "lastblock": "/blocks/last",
+    "blockchainheight": "/blocks/height"
+  }
 }
+
