@@ -1,9 +1,8 @@
 {
   "paymentconfig": {
     "paymentnode_api": "http://localhost:6870",
-    "paymentnode_apikey": "WaterZoutOplossing2017",
-    "querynode_api1": "http://backup.stake-waves.net:6870",
-    "querynode_api": "http://94.130.172.201",
+    "paymentnode_apikey": "<<invullen>>",
+    "querynode_api": "http://backup.stake-waves.net:6870",
     "nodename": "Stake-Waves.NET",
     "minimumWavesPayout": 0.0001,
     "feedistributionpercentage": 90,
