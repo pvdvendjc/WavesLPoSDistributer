@@ -54,13 +54,6 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 /** read start and endBlock **/
 if (fs.existsSync(config.toolbaseconfig.batchinfofile)) {
     var batchInfo = JSON.parse(fs.readFileSync(config.toolbaseconfig.batchinfofile));
-    fs.writeFileSync(config.toolbaseconfig.batchinfofile + '.bak', JSON.stringify(batchInfo), {}, function (err) {
-        if (err) {
-            console.error(err);
-        } else {
-            console.info('Backup written');
-        }
-    })
     var batch = null;
     switch (args[0]) {
         case 'lessors':
@@ -81,10 +74,20 @@ if (fs.existsSync(config.toolbaseconfig.batchinfofile)) {
         stop();
     }
     batch.payedAtBlock = batchInfo.batchData.scanStartAtBlock;
+    fs.copyFile(config.toolbaseconfig.batchinfofile, batch.id + '_' + config.toolbaseconfig.batchinfofile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 }
 
 if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
     var blocks = JSON.parse(fs.readFileSync(config.toolbaseconfig.currentblocksfile));
+    fs.copyFile(config.toolbaseconfig.currentblocksfile, batch.id + '_' + config.toolbaseconfig.currentblocksfile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 } else {
     console.info('No blocks in file, run checkBlocks first');
     stop();
@@ -92,6 +95,11 @@ if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
 
 if (fs.existsSync(config.toolbaseconfig.payqueuefile)) {
     var payqueue = JSON.parse(fs.readFileSync(config.toolbaseconfig.payqueuefile));
+    fs.copyFile(config.toolbaseconfig.payqueuefile, batch.id + '_' + config.toolbaseconfig.payqueuefile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 } else {
     var payqueue = [];
 }
@@ -203,6 +211,7 @@ var start = function() {
         batch.payId = 1;
     } else {
         batch.payId++;
+        batch.id++;
     }
     batch.fees = {};
     var lessors = false;
@@ -280,7 +289,7 @@ var start = function() {
     var logString = '';
     logString += 'Payment start at block: ' + batch.startedAtBlock + "\n";
     logString += 'Payment ended at block: ' + batch.payedAtBlock + "\n";
-    logString += 'Total blocks forged: ' + batch.blocks;
+    logString += 'Total blocks forged: ' + batch.blocks + "\n";
     logString += (totalAmounts.WAVES / Math.pow(10, 8)).toFixed(8) + ' WAVES payed to ' + Object.keys(payOuts).length + ' recipients' + "\n";
     config.paymentconfig.extraAssets.forEach(function (extraAsset) {
         if (extraAsset.id in totalAmounts) {

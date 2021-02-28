@@ -14,7 +14,7 @@ const bs58 = require('bs58');
 
 var args = process.argv.slice(2);
 if (args.length === 0) {
-    console.info('Give message for the transaction');
+    console.info('Give message for the transaction(s)');
     process.exit();
 }
 var message = args[0];
@@ -52,9 +52,17 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
     return //exit program
 }
 
+var date = new Intl.DateTimeFormat('nl', {month: '2-digit', year: 'numeric', day: '2-digit', hour: '2-digit', minute: '2-digit'}).formatToParts();
+var backupPrefix = date[0].value + date[1].value + date[2].value + date[3].value + date[4].value + '-' + date[6].value + ':' + date[8].value + '-' + date[10].value;
+
 /** Read payqueue-file **/
 if (fs.existsSync(config.toolbaseconfig.payqueuefile)) {
     var payqueue = JSON.parse(fs.readFileSync(config.toolbaseconfig.payqueuefile));
+    fs.copyFile(config.toolbaseconfig.payqueuefile, backupPrefix + '_' + config.toolbaseconfig.payqueuefile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 } else {
     console.log('No payqueue found, run generate payments first');
 }
@@ -68,7 +76,7 @@ var start = function() {
     var payOuts = {};
     if (fs.existsSync(config.toolbaseconfig.incentivePayoutsFile)) {
         payqueue.push(config.toolbaseconfig.incentivePayoutsFile);
-        fs.copyFile(config.toolbaseconfig.incentivePayoutsFile, config.toolbaseconfig.incentivePayoutsFile + '.bak', function(err) {
+        fs.copyFile(config.toolbaseconfig.incentivePayoutsFile, backupPrefix + '_' + config.toolbaseconfig.incentivePayoutsFile + '.bak', function(err) {
             if (err) {
                 console.error(err);
             }

@@ -45,6 +45,11 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 if (fs.existsSync(config.toolbaseconfig.batchinfofile)) {
     var batchInfo = JSON.parse(fs.readFileSync(config.toolbaseconfig.batchinfofile));
     var startAtBlock = batchInfo.batchData.scanStartAtBlock;
+    fs.copyFile(config.toolbaseconfig.batchinfofile, startAtBlock + '_' + config.toolbaseconfig.batchinfofile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 } else {
     var startAtBlock = config.paymentconfig.firstleaserblock;
     batchInfo = {};
@@ -61,6 +66,11 @@ var endAtBlock = startAtBlock + config.paymentconfig.blockwindowsize;
 /** read current leases **/
 if (fs.existsSync(config.toolbaseconfig.currentleasesfile)) {
     var leases = JSON.parse(fs.readFileSync(config.toolbaseconfig.currentleasesfile));
+    fs.copyFile(config.toolbaseconfig.currentleasesfile, startAtBlock + '_' + config.toolbaseconfig.currentleasesfile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 } else {
     var leases = {};
 }
@@ -68,6 +78,11 @@ if (fs.existsSync(config.toolbaseconfig.currentleasesfile)) {
 /** read current blocks **/
 if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
     var blocks = JSON.parse(fs.readFileSync(config.toolbaseconfig.currentblocksfile));
+    fs.copyFile(config.toolbaseconfig.currentblocksfile, startAtBlock + '_' + config.toolbaseconfig.currentblocksfile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 } else {
     var blocks = {};
 }
@@ -75,6 +90,11 @@ if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
 /** read existing incentivePayouts **/
 if (fs.existsSync(config.toolbaseconfig.incentivePayoutsFile)) {
     var incentivePayouts = JSON.parse(fs.readFileSync(config.toolbaseconfig.incentivePayoutsFile));
+    fs.copyFile(config.toolbaseconfig.incentivePayoutsFile, startAtBlock + '_' + config.toolbaseconfig.incentivePayoutsFile + '.bak', function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 } else {
     var incentivePayouts = {};
 }
