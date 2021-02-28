@@ -72,6 +72,13 @@ if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
     var blocks = {};
 }
 
+/** read existing incentivePayouts **/
+if (fs.existsSync(config.toolbaseconfig.incentivePayoutsFile)) {
+    var incentivePayouts = JSON.parse(fs.readFileSync(config.toolbaseconfig.incentivePayoutsFile));
+} else {
+    var incentivePayouts = {};
+}
+
 /** set assetInfo **/
 var assetInfo = {};
 
@@ -107,6 +114,12 @@ var start = function() {
     let lastBlockHeight = wavesFunctions.getDataFromNode('/blocks/height').height;
     if (lastBlockHeight < endAtBlock + 100) {
         console.info('Last block to read is in the future, current heigt is ' + lastBlockHeight + ' wanted height is ' + (endAtBlock + 100));
+        var blockDiff = endAtBlock + 100 - lastBlockHeight;
+        var days = Math.floor(blockDiff / (24 * 60));
+        var hours = Math.floor((blockDiff - (days * 24 * 60)) / 60);
+        var minutes = Math.floor((blockDiff - (days * 24 * 60)) - (hours * 60));
+        var backIn = '~ ' + days + ' days, ' + hours + ' hours and ' + minutes + ' minutes. GoodBye';
+        console.info('Come back in ' + backIn);
         stop();
     }
     var blockChainBlocks = [];
@@ -138,6 +151,28 @@ var start = function() {
                 // check if there is a new lease in it
                 if (transaction.type === 8 && (transaction.recipient === config.paymentconfig.leasewallet || (aliases.indexOf(transaction.recipient) > -1))) {
                     leases[transaction.id] = lease(transaction.sender, transaction.amount, blockChainBlock.height, -1, transaction.id);
+                    if (config.paymentconfig.incentiveAssets.length > 0) {
+                        if (!(transaction.sender in incentivePayouts)) {
+                            incentivePayouts[transaction.sender] = {};
+                        }
+                        config.paymentconfig.incentiveAssets.forEach(function(asset) {
+                            if (!(asset.id in assetInfo)) {
+                                assetInfo[asset.id] = wavesFunctions.getAssetInfo(asset.id);
+                            }
+                            if (!(asset.id in incentivePayouts[transaction.sender])) {
+                                incentivePayouts[transaction.sender][asset.id] = 0;
+                            }
+                            if (asset.feePerWave > 0) {
+                                var waves = transaction.amount / Math.pow(10, 8);
+                                var assetAmount = waves * Math.pow(10, assetInfo[asset.id].decimals) * (asset.feePerWave / 100);
+                                incentivePayouts[transaction.sender][asset.id] += assetAmount;
+                            }
+                            if (asset.fixedAmountPerLease > 0) {
+                                var assetAmount = asset.fixedAmountPerLease * Math.pow(10, assetInfo[asset.id].decimals);
+                                incentivePayouts[transaction.sender][asset.id] += assetAmount;
+                            }
+                        });
+                    }
                 }
 
                 // check if there is a cancelled lease in it
@@ -148,8 +183,10 @@ var start = function() {
             });
             if (myBlock) {
                 // Read fees from this and previous block
-                newBlock.fees = Math.round((wavesFunctions.getFeesFromBlock(blockChainBlock) / 5) * 2); // 40% of fees of current block
-                newBlock.fees += Math.round((wavesFunctions.getFeesFromBlock(blockChainBlocks[index - 1]) / 5) *3); // 60% of fees of previous block
+                // newBlock.fees = Math.round((wavesFunctions.getFeesFromBlock(blockChainBlock) / 5) * 2); // 40% of fees of current block
+                // newBlock.fees += Math.round((wavesFunctions.getFeesFromBlock(blockChainBlocks[index - 1]) / 5) *3); // 60% of fees of previous block
+                newBlock.fees = Math.round(blockChainBlock.totalFee / 5 * 2); // 40% of fees of current block
+                newBlock.fees += Math.round(blockChainBlocks[index -1].totalFee / 5 * 3); // 60% of fees of previous block
                 if (config.paymentconfig.assetHoldersPayments.length > 0) {
                     config.paymentconfig.assetHoldersPayments.forEach(function (assetHoldersPayment) {
                         if (assetHoldersPayment.richListAtBlock) {
@@ -159,6 +196,9 @@ var start = function() {
                             // Read richlist only if blocks are less then 2000 ago, else its a pitty for the tokenholders
                             if (blockChainBlock.height > (lastBlockHeight - 2000)) {
                                 newBlock[assetHoldersPayment.id] = wavesFunctions.getAssetDistributionAtBlock(assetHoldersPayment.id, blockChainBlock.height, config.paymentconfig.leasewallet);
+                            } else {
+                                newBlock[assetHoldersPayment.id] = {};
+                                newBlock[assetHoldersPayment.id].addresses = {};
                             }
                         }
                     });
@@ -173,7 +213,7 @@ var start = function() {
         if (err) {
             console.error(err);
         } else {
-            console.info("Leaes written to file");
+            console.info("Leases written to file");
         }
     });
     
@@ -194,6 +234,15 @@ var start = function() {
         } else {
             console.info("Batchinfo written");
             stop();
+        }
+    });
+
+    // Write incentives
+    fs.writeFile(config.toolbaseconfig.incentivePayoutsFile, JSON.stringify(incentivePayouts), {}, function (err) {
+        if (err) {
+            console.error(err);
+        } else {
+            console.info('Incentive written to file');
         }
     });
 }

@@ -54,6 +54,13 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 /** read start and endBlock **/
 if (fs.existsSync(config.toolbaseconfig.batchinfofile)) {
     var batchInfo = JSON.parse(fs.readFileSync(config.toolbaseconfig.batchinfofile));
+    fs.writeFileSync(config.toolbaseconfig.batchinfofile + '.bak', JSON.stringify(batchInfo), {}, function (err) {
+        if (err) {
+            console.error(err);
+        } else {
+            console.info('Backup written');
+        }
+    })
     var batch = null;
     switch (args[0]) {
         case 'lessors':
@@ -74,7 +81,6 @@ if (fs.existsSync(config.toolbaseconfig.batchinfofile)) {
         stop();
     }
     batch.payedAtBlock = batchInfo.batchData.scanStartAtBlock;
-    console.info(batchInfo);
 }
 
 if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
@@ -82,6 +88,12 @@ if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
 } else {
     console.info('No blocks in file, run checkBlocks first');
     stop();
+}
+
+if (fs.existsSync(config.toolbaseconfig.payqueuefile)) {
+    var payqueue = JSON.parse(fs.readFileSync(config.toolbaseconfig.payqueuefile));
+} else {
+    var payqueue = [];
 }
 
 var blocksToPay = [];
@@ -116,22 +128,21 @@ var generateHTML = function (payOuts, fileName, batch, lessors) {
         "    <thead> " +
         "      <tr>" +
         "        <th>Address (# blocks)</th>" +
-        "        <th>Waves</th>";
+        "        <th class=\"text-right\">Waves</th>";
 
     if (lessors) {
         config.paymentconfig.extraAssets.forEach(function (asset) {
-            html += "<th>" + assetInfo[asset.id].name + "</th>";
+            html += "<th class=\"text-right\">" + assetInfo[asset.id].name + "</th>";
             totals[asset.id] = 0;
         });
     }
 
-    html += "      <th></th></tr>" +
+    html += "      <th class=\"text-right\"></th></tr>" +
         "    </thead>" +
         "    <tbody>";
 
     for (address in payOuts) {
         payout = payOuts[address];
-        console.info(payout);
         html += '<tr><td>' + address + ' (' + payout.blocks + ')</td>';
         for (asset in payout) {
             if (asset !== 'blocks') {
@@ -143,19 +154,19 @@ var generateHTML = function (payOuts, fileName, batch, lessors) {
                     }
                     decimals = assetInfo[asset].decimals;
                 }
-                html += '<td>' + (payout[asset] / Math.pow(10, decimals)).toFixed(decimals) + '</td>';
+                html += '<td class="text-right">' + (payout[asset] / Math.pow(10, decimals)).toFixed(decimals) + '</td>';
                 totals[asset] += payout[asset];
             }
         }
-        html += '</tr>' + "\n";
+        html += '<td></td></tr>' + "\n";
     }
-    html += '<tr><td><b>Total amount:</b></td><td><b>' + (totals.WAVES / Math.pow(10,8)).toFixed(8) + '</b></td>';
+    html += '<tr><td><b>Total amount:</b></td><td align="right"><b>' + (totals.WAVES / Math.pow(10,8)).toFixed(8) + '</b></td>';
     for (asset in payout) {
         if (asset !== 'blocks' && asset !== 'WAVES') {
-            html += '<td><b>' + (totals[asset] / Math.pow(10, assetInfo[asset].decimals)).toFixed(assetInfo[asset].decimals) + '</b></td>';
+            html += '<td align="right"><b>' + (totals[asset] / Math.pow(10, assetInfo[asset].decimals)).toFixed(assetInfo[asset].decimals) + '</b></td>';
         }
     };
-    html += '</tr>' + "\n";
+    html += '<td></td></tr></body></html>' + "\n";
 
     fs.writeFileSync(fileName, html, {}, function(err) {
         if (err) {
@@ -188,7 +199,11 @@ var start = function() {
         stop();
     }
     batch.blocks = blocksToPay.length;
-    batch.payId = 1;
+    if (!('payId' in batch)) {
+        batch.payId = 1;
+    } else {
+        batch.payId++;
+    }
     batch.fees = {};
     var lessors = false;
     blocksToPay.forEach(function (block) {
@@ -252,10 +267,54 @@ var start = function() {
                 break;
         }
     });
-    console.info(payOuts);
+    for (address in payOuts) {
+        payOut = payOuts[address];
+        for (asset in payOut) {
+            if (!(asset in totalAmounts)) {
+                totalAmounts[asset] = 0;
+            }
+            totalAmounts[asset] += payOut[asset];
+        }
+    }
+    // Write logfile
+    var logString = '';
+    logString += 'Payment start at block: ' + batch.startedAtBlock + "\n";
+    logString += 'Payment ended at block: ' + batch.payedAtBlock + "\n";
+    logString += 'Total blocks forged: ' + batch.blocks;
+    logString += (totalAmounts.WAVES / Math.pow(10, 8)).toFixed(8) + ' WAVES payed to ' + Object.keys(payOuts).length + ' recipients' + "\n";
+    config.paymentconfig.extraAssets.forEach(function (extraAsset) {
+        if (extraAsset.id in totalAmounts) {
+            logString += (totalAmounts[extraAsset.id] / Math.pow(10, assetInfo[extraAsset.id].decimals)).toFixed(assetInfo[extraAsset.id].decimals);
+            logString += ' ' + assetInfo[extraAsset.id].name + ' payed to ' + Object.keys(payOuts).length + ' recipients' + "\n";;
+        }
+    });
+    logString += 'GoodBye';
+    console.info(logString);
+    fs.writeFileSync(args[0] + '_payout_' + batch.payId + '.log', logString, {}, function (err) {
+        if (err) {
+            console.error(err);
+        } else {
+            console.info('Log file written');
+        }
+    })
     // generate HTML file
-    console.info(batch);
-    generateHTML(payOuts, 'lessors.html', batch, lessors);
+    generateHTML(payOuts, args[0] + '_payout_' + batch.payId + '.html', batch, lessors);
+    // generate transactionfiles
+    fs.writeFileSync(args[0] + '_payout_' + batch.payId + '.json', JSON.stringify(payOuts), {}, function (err) {
+        if (err) {
+            console.error(err);
+        } else {
+            console.info('Payout file written');
+        }
+    });
+    payqueue.push(args[0] + '_payout_' + batch.payId + '.json');
+    fs.writeFileSync(config.toolbaseconfig.payqueuefile, JSON.stringify(payqueue), {}, function(err) {
+        if (err) {
+            console.error(err);
+        } else {
+            console.info('Payqueue updated');
+        }
+    });
     // save batchInfo
     batch.startedAtBlock = batch.payedAtBlock;
     switch (args[0]) {
@@ -271,14 +330,13 @@ var start = function() {
             });
             break;
     }
-    console.info(batchInfo.batchData.batches);
-    // fs.writeFileSync(config.toolbaseconfig.batchinfofile, JSON.stringify(batchInfo), {}, function (err) {
-    //     if (err) {
-    //         console.error(err);
-    //     } else {
-    //         console.info('Batch file written');
-    //     }
-    // });
+    fs.writeFileSync(config.toolbaseconfig.batchinfofile, JSON.stringify(batchInfo), {}, function (err) {
+        if (err) {
+            console.error(err);
+        } else {
+            console.info('Batch file written');
+        }
+    });
     stop();
 }
 
