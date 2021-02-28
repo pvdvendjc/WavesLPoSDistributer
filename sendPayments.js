@@ -12,6 +12,19 @@ const configfile = 'config.json'
 const runfile = 'sendPayments.run'
 const bs58 = require('bs58');
 
+var args = process.argv.slice(2);
+if (args.length === 0) {
+    console.info('Give message for the transaction');
+    process.exit();
+}
+var message = args[0];
+if (args.length == 2) {
+    var dryRun = true;
+    console.info('DryRun mode, nothing will be sent');
+} else {
+    var dryRun = false;
+}
+
 /**
  * Stop the function and remove run-file
  */
@@ -46,7 +59,7 @@ if (fs.existsSync(config.toolbaseconfig.payqueuefile)) {
     console.log('No payqueue found, run generate payments first');
 }
 if (payqueue.length == 0) {
-    console.log('Noting to pay');
+    console.log('Nothing to pay');
 }
 
 var start = function() {
@@ -77,13 +90,15 @@ var start = function() {
             }
         }
     }
-    fs.writeFileSync(config.toolbaseconfig.incentivePayoutsFile, '{}', {}, function(err) {
-        if (err) {
-            console.error(err);
-        }
-    });
+    if (!dryRun) {
+        fs.writeFileSync(config.toolbaseconfig.incentivePayoutsFile, '{}', {}, function(err) {
+            if (err) {
+                console.error(err);
+            }
+        });
+    }
 
-    console.info(mergedPayOuts);
+    console.info('MergedPayouts ' , mergedPayOuts);
 
     var transfers = {};
     for (address in mergedPayOuts) {
@@ -110,17 +125,20 @@ var start = function() {
 
     // Generate transactions for the blockchain
 
-    fs.writeFileSync(config.toolbaseconfig.payqueuefile, JSON.stringify(payqueue), {}, function(err) {
-        if (err) {
-            console.error(err);
-        } else {
-            console.info('Payqueue written');
-        }
-    });
+    if (!dryRun) {
+        fs.writeFileSync(config.toolbaseconfig.payqueuefile, JSON.stringify(payqueue), {}, function(err) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.info('Payqueue written');
+            }
+        });
+    }
 }
 
 var sendToNode = function(transactions, asset) {
     var transaction = {sender: config.paymentconfig.leasewallet, assetId: asset};
+    transaction.attachment = bs58.encode(Buffer.from(message));
     if (asset === 'WAVES') {
         transaction.assetId = null;
     }
@@ -134,18 +152,27 @@ var sendToNode = function(transactions, asset) {
         });
         transaction.transferCount = transactions.length;
         transaction.fee = Math.ceil((transactions.length * 0.5) + 1) * 100000;
-        transaction.attachment = bs58.encode(Buffer.from('Thx for leasing to our node'));
         transaction.proofs = [bs58.encode(Buffer.from('Signed by SWN'))];
+    } else {
+        transaction.type = 4;
+        transaction.version = 2;
+        transaction.recipient = transactions[0].recipient;
+        transaction.amount = transactions[0].amount;
+        transaction.fee = 100000;
     }
     var url = config.paymentconfig.paymentnode_api + config.toolbaseconfig.masstxapisuffix;
-    request('POST', url, {
-        json: transaction,
-        headers: {"Accept": "application/json", "Content-Type": "application/json", "api_key": config.paymentconfig.paymentnode_apikey}
-    }, function (err) {
-        if (err) {
-            console.log(err);
-        }
-    });
+    if (!dryRun) {
+        request('POST', url, {
+            json: transaction,
+            headers: {"Accept": "application/json", "Content-Type": "application/json", "api_key": config.paymentconfig.paymentnode_apikey}
+        }, function (err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+    } else {
+        console.info(transaction);
+    }
 }
 
 start();
