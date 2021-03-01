@@ -117,23 +117,24 @@ var generateHTML = function (payOuts, fileName, batch, lessors) {
     var date = (new Date()).toLocaleDateString();
     // generate new transactions and HTML-file
     totals = {WAVES: 0};
-    var html = "<!DOCTYPE html>" +
-        "<html lang=\"en\">" +
-        "<head>" +
-        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
-        "  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">" +
-        "  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script>" +
-        "  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>" +
-        "</head>" +
-        "<body>" +
+    var html = "<!DOCTYPE html>\n" +
+        "<html lang=\"en\">\n" +
+        "<head>\n" +
+        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
+        "  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">\n" +
+        "  <link rel=\"icon\" href=\"https://www.stake-waves.net/wp-content/uploads/2021/02/cropped-logozondertekts.png\">\n"
+        "  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script>\n" +
+        "  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>\n" +
+        "</head>\n" +
+        "<body>\n" +
         "<div class=\"container\">" +
-        "  <h3>Fees between blocks " + batch.startedAtBlock + " - " + batch.payedAtBlock + ", Payout #" + batch.payId + ", (Share Tx fees " + batch.fees.fees + "% / Blockreward " + batch.fees.rewards + "%)</h3>" +
-        "  <h4>(LPOS address: " + config.paymentconfig.leasewallet + ")</h4>" +
-        "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode " + config.paymentconfig.nodename + ". Greetings!</h5> " +
-        "  <h5>You can always contact me by <a href=\"mailto:" + config.paymentconfig.mail + "\">E-mail</a></h5>" +
-        "  <h5>Blocks forged: " + batch.blocks + "</h5>" +
-        "  <table class=\"table table-striped table-hover\">" +
-        "    <thead> " +
+        "  <h3>Fees between blocks " + batch.startedAtBlock + " - " + batch.payedAtBlock + ", Payout #" + batch.payId + ", (Share Tx fees " + batch.fees.fees + "% / Blockreward " + batch.fees.rewards + "%)</h3>\n" +
+        "  <h4>(LPOS address: " + config.paymentconfig.leasewallet + ")</h4>\n" +
+        "  <h5>[ " + date + " ]: Hi all, again a short update of the fee's earned by the wavesnode " + config.paymentconfig.nodename + ". Greetings!</h5> \n" +
+        "  <h5>You can always contact me by <a href=\"mailto:" + config.paymentconfig.mail + "\">E-mail</a></h5>\n" +
+        "  <h5>Blocks forged: " + batch.blocks + "</h5>\n" +
+        "  <table class=\"table table-striped table-hover\">\n" +
+        "    <thead>\n " +
         "      <tr>" +
         "        <th>Address (# blocks)</th>" +
         "        <th class=\"text-right\">Waves</th>";
@@ -145,9 +146,9 @@ var generateHTML = function (payOuts, fileName, batch, lessors) {
         });
     }
 
-    html += "      <th class=\"text-right\"></th></tr>" +
-        "    </thead>" +
-        "    <tbody>";
+    html += "      <th class=\"text-right\"></th></tr>\n" +
+        "    </thead>\n" +
+        "    <tbody>\n";
 
     for (address in payOuts) {
         payout = payOuts[address];
