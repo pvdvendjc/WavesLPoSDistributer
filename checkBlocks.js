@@ -59,7 +59,6 @@ if (fs.existsSync(config.toolbaseconfig.batchinfofile)) {
     config.paymentconfig.assetHoldersPayments.forEach(function (assetHoldersPayment) {
         batchInfo.batchData.batches[assetHoldersPayment.id] = {id: 1, startedAtBlock: startAtBlock, payedAtBlock: 0};
     });
-
 }
 var endAtBlock = startAtBlock + config.paymentconfig.blockwindowsize;
 
@@ -215,10 +214,21 @@ var start = function() {
                             }
                             // Read richlist only if blocks are less then 2000 ago, else its a pitty for the tokenholders
                             if (blockChainBlock.height > (lastBlockHeight - 2000)) {
-                                newBlock[assetHoldersPayment.id] = wavesFunctions.getAssetDistributionAtBlock(assetHoldersPayment.id, blockChainBlock.height, config.paymentconfig.leasewallet);
+                                var assetAddresses = wavesFunctions.getAssetDistributionAtBlock(assetHoldersPayment.id, blockChainBlock.height, config.paymentconfig.leasewallet);
+                                if (("minimumAmountInWallet" in assetHoldersPayment) && assetHoldersPayment.minimumAmountInWallet > 0) {
+                                    var newAssetAddresses = {};
+                                    assetAddresses.totalDistributed = 0;
+                                    for (address in assetAddresses.addresses) {
+                                        if (assetAddresses.addresses[address] >= assetHoldersPayment.minimumAmountInWallet * Math.pow(10, assetInfo[assetHoldersPayment.id].decimals)) {
+                                            newAssetAddresses[address] = assetAddresses.addresses[address];
+                                            assetAddresses.totalDistributed += assetAddresses.addresses[address];
+                                        }
+                                    }
+                                    assetAddresses.addresses = newAssetAddresses;
+                                }
+                                newBlock[assetHoldersPayment.id] = assetAddresses;
                             } else {
-                                newBlock[assetHoldersPayment.id] = {};
-                                newBlock[assetHoldersPayment.id].addresses = {};
+                                newBlock[assetHoldersPayment.id] = {addresses: {}, totalDistributed: 0};
                             }
                         }
                     });

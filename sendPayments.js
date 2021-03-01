@@ -18,11 +18,11 @@ if (args.length === 0) {
     process.exit();
 }
 var message = args[0];
-if (args.length == 2) {
+if (args.length == 2 && args[1] === 'false') {
+    var dryRun = false;
+} else {
     var dryRun = true;
     console.info('DryRun mode, nothing will be sent');
-} else {
-    var dryRun = false;
 }
 
 /**
@@ -146,11 +146,13 @@ var start = function() {
 
 var sendToNode = function(transactions, asset) {
     var transaction = {sender: config.paymentconfig.leasewallet, assetId: asset};
+    var url = config.paymentconfig.paymentnode_api;
     transaction.attachment = bs58.encode(Buffer.from(message));
     if (asset === 'WAVES') {
         transaction.assetId = null;
     }
     if (transactions.length > 1) {
+        url += config.toolbaseconfig.masstxapisuffix;
         transaction.type = 11;
         transaction.version = 1;
         transaction.transfers = transactions;
@@ -161,14 +163,16 @@ var sendToNode = function(transactions, asset) {
         transaction.transferCount = transactions.length;
         transaction.fee = Math.ceil((transactions.length * 0.5) + 1) * 100000;
         transaction.proofs = [bs58.encode(Buffer.from('Signed by SWN'))];
-    } else {
+    } else if (transactions.length === 1) {
+        url += config.toolbaseconfig.transactionapisuffix;
         transaction.type = 4;
         transaction.version = 2;
         transaction.recipient = transactions[0].recipient;
         transaction.amount = transactions[0].amount;
         transaction.fee = 100000;
+    } else {
+        dryRun = true;
     }
-    var url = config.paymentconfig.paymentnode_api + config.toolbaseconfig.masstxapisuffix;
     if (!dryRun) {
         request('POST', url, {
             json: transaction,
