@@ -53,7 +53,7 @@ if (fs.existsSync(configfile)) { //configurationfile is found, let's read conten
 }
 
 var date = new Intl.DateTimeFormat('nl', {month: '2-digit', year: 'numeric', day: '2-digit', hour: '2-digit', minute: '2-digit'}).formatToParts();
-var backupPrefix = date[0].value + date[1].value + date[2].value + date[3].value + date[4].value + '-' + date[6].value + ':' + date[8].value + '-' + date[10].value;
+var backupPrefix = date[0].value + date[1].value + date[2].value + date[3].value + date[4].value + '-' + date[6].value + ':' + date[8].value;
 
 /** Read payqueue-file **/
 if (fs.existsSync(config.toolbaseconfig.payqueuefile)) {
