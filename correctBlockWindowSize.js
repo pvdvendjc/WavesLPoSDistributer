@@ -45,7 +45,7 @@ fs.copyFile(configfile, configfile + '.bak', function (err) {
     }
 });
 
-fs.writeFile(configfile, JSON.stringify(config), {}, function(err) {
+fs.writeFile(configfile, JSON.stringify(config, null, 4), {}, function(err) {
     if (err) {
         console.error(err);
     }

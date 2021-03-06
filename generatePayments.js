@@ -313,7 +313,7 @@ var start = function() {
     // generate HTML file
     generateHTML(payOuts, args[0] + '_payout_' + batch.payId + '.html', batch, lessors);
     // generate transactionfiles
-    fs.writeFileSync(args[0] + '_payout_' + batch.payId + '.json', JSON.stringify(payOuts), {}, function (err) {
+    fs.writeFileSync(args[0] + '_payout_' + batch.payId + '.json', JSON.stringify(payOuts, null, 4), {}, function (err) {
         if (err) {
             console.error(err);
         } else {
@@ -321,7 +321,7 @@ var start = function() {
         }
     });
     payqueue.push(args[0] + '_payout_' + batch.payId + '.json');
-    fs.writeFileSync(config.toolbaseconfig.payqueuefile, JSON.stringify(payqueue), {}, function(err) {
+    fs.writeFileSync(config.toolbaseconfig.payqueuefile, JSON.stringify(payqueue, null, 4), {}, function(err) {
         if (err) {
             console.error(err);
         } else {
@@ -343,7 +343,7 @@ var start = function() {
             });
             break;
     }
-    fs.writeFileSync(config.toolbaseconfig.batchinfofile, JSON.stringify(batchInfo), {}, function (err) {
+    fs.writeFileSync(config.toolbaseconfig.batchinfofile, JSON.stringify(batchInfo, null, 4), {}, function (err) {
         if (err) {
             console.error(err);
         } else {

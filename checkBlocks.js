@@ -237,7 +237,7 @@ var start = function() {
         currentStartBlock += 99;
     }
     // Write current leases
-    fs.writeFile(config.toolbaseconfig.currentleasesfile, JSON.stringify(leases), {}, function(err) {
+    fs.writeFile(config.toolbaseconfig.currentleasesfile, JSON.stringify(leases, null, 4), {}, function(err) {
         if (err) {
             console.error(err);
         } else {
@@ -246,7 +246,7 @@ var start = function() {
     });
     
     // Write current blocks
-    fs.writeFile(config.toolbaseconfig.currentblocksfile, JSON.stringify(blocks), {}, function(err) {
+    fs.writeFile(config.toolbaseconfig.currentblocksfile, JSON.stringify(blocks, null, 4), {}, function(err) {
         if (err) {
             console.error(err);
         } else {
@@ -256,7 +256,7 @@ var start = function() {
     
     // Write batchinfo
     batchInfo.batchData.scanStartAtBlock = endAtBlock;
-    fs.writeFile(config.toolbaseconfig.batchinfofile, JSON.stringify(batchInfo), {}, function (err) {
+    fs.writeFile(config.toolbaseconfig.batchinfofile, JSON.stringify(batchInfo, null, 4), {}, function (err) {
         if (err) {
             console.error(err);
         } else {
@@ -266,7 +266,7 @@ var start = function() {
     });
 
     // Write incentives
-    fs.writeFile(config.toolbaseconfig.incentivePayoutsFile, JSON.stringify(incentivePayouts), {}, function (err) {
+    fs.writeFile(config.toolbaseconfig.incentivePayoutsFile, JSON.stringify(incentivePayouts, null, 4), {}, function (err) {
         if (err) {
             console.error(err);
         } else {

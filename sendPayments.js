@@ -134,7 +134,7 @@ var start = function() {
     // Generate transactions for the blockchain
 
     if (!dryRun) {
-        fs.writeFileSync(config.toolbaseconfig.payqueuefile, JSON.stringify(payqueue), {}, function(err) {
+        fs.writeFileSync(config.toolbaseconfig.payqueuefile, JSON.stringify(payqueue, null, 4), {}, function(err) {
             if (err) {
                 console.error(err);
             } else {

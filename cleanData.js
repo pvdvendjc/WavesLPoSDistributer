@@ -99,7 +99,7 @@ console.info('# Leases', Object.keys(leases).length);
 
 if (!dryRun) {
     // Write current leases
-    fs.writeFile(config.toolbaseconfig.currentleasesfile, JSON.stringify(leases), {}, function(err) {
+    fs.writeFile(config.toolbaseconfig.currentleasesfile, JSON.stringify(leases, null, 4), {}, function(err) {
         if (err) {
             console.error(err);
         } else {
@@ -108,7 +108,7 @@ if (!dryRun) {
     });
 
     // Write current blocks
-    fs.writeFile(config.toolbaseconfig.currentblocksfile, JSON.stringify(blocks), {}, function(err) {
+    fs.writeFile(config.toolbaseconfig.currentblocksfile, JSON.stringify(blocks, null, 4), {}, function(err) {
         if (err) {
             console.error(err);
         } else {
