@@ -216,6 +216,7 @@ var start = function() {
     }
     batch.fees = {};
     var lessors = false;
+    var totalGenerated = 0;
     blocksToPay.forEach(function (block) {
         payToObject = {};
         payToObject.addresses = {};
@@ -276,6 +277,7 @@ var start = function() {
                 });
                 break;
         }
+        totalGenerated += block.rewards + block.fees;
     });
     for (address in payOuts) {
         payOut = payOuts[address];
@@ -291,6 +293,7 @@ var start = function() {
     logString += 'Payment start at block: ' + batch.startedAtBlock + "\n";
     logString += 'Payment ended at block: ' + batch.payedAtBlock + "\n";
     logString += 'Total blocks forged: ' + batch.blocks + "\n";
+    logString += 'Total Rewards and fees generated: ' + (totalGenerated / Math.pow(10, 8)).toFixed(8) + " WAVES\n";
     logString += (totalAmounts.WAVES / Math.pow(10, 8)).toFixed(8) + ' WAVES payed to ' + Object.keys(payOuts).length + ' recipients' + "\n";
     config.paymentconfig.extraAssets.forEach(function (extraAsset) {
         if (extraAsset.id in totalAmounts) {
@@ -298,7 +301,7 @@ var start = function() {
             logString += ' ' + assetInfo[extraAsset.id].name + ' payed to ' + Object.keys(payOuts).length + ' recipients' + "\n";;
         }
     });
-    logString += 'GoodBye';
+    logString += 'GoodBye' + "\n";
     console.info(logString);
     fs.writeFileSync(args[0] + '_payout_' + batch.payId + '.log', logString, {}, function (err) {
         if (err) {

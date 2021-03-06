@@ -217,11 +217,9 @@ var start = function() {
                                 var assetAddresses = wavesFunctions.getAssetDistributionAtBlock(assetHoldersPayment.id, blockChainBlock.height, config.paymentconfig.leasewallet);
                                 if (("minimumAmountInWallet" in assetHoldersPayment) && assetHoldersPayment.minimumAmountInWallet > 0) {
                                     var newAssetAddresses = {};
-                                    assetAddresses.totalDistributed = 0;
                                     for (address in assetAddresses.addresses) {
                                         if (assetAddresses.addresses[address] >= assetHoldersPayment.minimumAmountInWallet * Math.pow(10, assetInfo[assetHoldersPayment.id].decimals)) {
                                             newAssetAddresses[address] = assetAddresses.addresses[address];
-                                            assetAddresses.totalDistributed += assetAddresses.addresses[address];
                                         }
                                     }
                                     assetAddresses.addresses = newAssetAddresses;
