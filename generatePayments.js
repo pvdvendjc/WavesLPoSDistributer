@@ -122,7 +122,7 @@ var generateHTML = function (payOuts, fileName, batch, lessors) {
         "<head>\n" +
         "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
         "  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">\n" +
-        "  <link rel=\"icon\" href=\"https://www.stake-waves.net/wp-content/uploads/2021/02/cropped-logozondertekts.png\">\n"
+        "  <link rel=\"icon\" href=\"https://www.stake-waves.net/wp-content/uploads/2021/02/cropped-logozondertekts.png\">\n" +
         "  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script>\n" +
         "  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>\n" +
         "</head>\n" +
@@ -175,7 +175,7 @@ var generateHTML = function (payOuts, fileName, batch, lessors) {
             html += '<td align="right"><b>' + (totals[asset] / Math.pow(10, assetInfo[asset].decimals)).toFixed(assetInfo[asset].decimals) + '</b></td>';
         }
     };
-    html += '<td></td></tr></body></html>' + "\n";
+    html += '<td></td></tr></tbody></table></body></html>' + "\n";
 
     fs.writeFileSync(fileName, html, {}, function(err) {
         if (err) {
