@@ -33,11 +33,13 @@ if (fs.existsSync(config.toolbaseconfig.batchinfofile)) {
 /** read current leases **/
 if (fs.existsSync(config.toolbaseconfig.currentleasesfile)) {
     var leases = JSON.parse(fs.readFileSync(config.toolbaseconfig.currentleasesfile));
-    fs.copyFile(config.toolbaseconfig.currentleasesfile, 'cleanUp_' + config.toolbaseconfig.currentleasesfile + '.bak', function (err) {
-        if (err) {
-            console.error(err);
-        }
-    });
+    if (!dryRun) {
+        fs.copyFile(config.toolbaseconfig.currentleasesfile, 'cleanUp_' + config.toolbaseconfig.currentleasesfile + '.bak', function (err) {
+            if (err) {
+                console.error(err);
+            }
+        });
+    }
 } else {
     var leases = {};
 }
@@ -45,11 +47,13 @@ if (fs.existsSync(config.toolbaseconfig.currentleasesfile)) {
 /** read current blocks **/
 if (fs.existsSync(config.toolbaseconfig.currentblocksfile)) {
     var blocks = JSON.parse(fs.readFileSync(config.toolbaseconfig.currentblocksfile));
-    fs.copyFile(config.toolbaseconfig.currentblocksfile, 'cleanUp_' + config.toolbaseconfig.currentblocksfile + '.bak', function (err) {
-        if (err) {
-            console.error(err);
-        }
-    });
+    if (!dryRun) {
+        fs.copyFile(config.toolbaseconfig.currentblocksfile, 'cleanUp_' + config.toolbaseconfig.currentblocksfile + '.bak', function (err) {
+            if (err) {
+                console.error(err);
+            }
+        });
+    }
 } else {
     var blocks = {};
 }
@@ -75,27 +79,19 @@ var cleanBlocks = function() {
 var cleanLeases = function() {
     var deleteLease = true;
     for (leaseId in leases) {
-        deleteLease = true;
         lease = leases[leaseId];
-        if (lease.cancelledAtBlock > batchInfo.batchData.batches.lessors.payedAtBlock) {
-            deleteLease = false;
-        }
-        if (lease.cancelledAtBlock === -1) {
-            deleteLease = false;
-        }
-        if (deleteLease) {
+        if (lease.cancelledAtBlock < batchInfo.batchData.batches.lessors.payedAtBlock && lease.cancelledAtBlock > 0) {
             delete leases[leaseId];
         }
-
     }
 }
 
-console.info('# Blocks', Object.keys(blocks).length);
+console.info('# Blocks before cleanup', Object.keys(blocks).length);
 cleanBlocks();
-console.info('# Blocks', Object.keys(blocks).length);
-console.info('# Leases', Object.keys(leases).length);
+console.info('# Blocks after cleanup', Object.keys(blocks).length);
+console.info('# Leases before cleanup', Object.keys(leases).length);
 cleanLeases();
-console.info('# Leases', Object.keys(leases).length);
+console.info('# Leases after cleanup', Object.keys(leases).length);
 
 if (!dryRun) {
     // Write current leases

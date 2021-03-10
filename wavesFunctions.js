@@ -19,7 +19,8 @@ module.exports = {
         return JSON.parse(request('GET', queryNode + command, {
             'headers': {
                 'Connection': 'keep-alive'
-            }
+            },
+            'agent': false
         }).getBody('utf8'));
     },
     /**
@@ -29,24 +30,28 @@ module.exports = {
      **/
     getAssetInfo: function(assetId) {
         var url = queryNode + '/assets/details/' + assetId + '?full=true';
-        return JSON.parse(request('GET', url, {'headers': {
+        return JSON.parse(request('GET', url, {
+            'headers': {
                 'Connection': 'keep-alive'
-            }
+            },
+            'agent': false
         }).getBody('utf8'));
     },
     /**
      *
      * @param assetId
      * @param blockHeight
+     * @param leaseWallet
+     * @param minimumAmount (default 0)
      * @returns {{addresses: {}, totalDistributed: number}}
      */
-    getAssetDistributionAtBlock: function (assetId, blockHeight, leaseWallet) {
+    getAssetDistributionAtBlock: function (assetId, blockHeight, leaseWallet, minimumAmount = 0) {
         var addresses = {};
         var moreData = true;
         var first = true;
         var url = '';
         var response = {};
-        var totalAssets = 0;
+        var totalDistributed = 0;
         while (moreData) {
             url = queryNode + '/assets/' + assetId + '/distribution/' + blockHeight + '/limit/1000';
             if (!first) {
@@ -55,18 +60,21 @@ module.exports = {
             response = JSON.parse(request('GET', url,{
                 'headers': {
                     'Connection': 'keep-alive'
-                }
+                },
+                'agent': false
             }).getBody('utf8'));
             moreData = response.hasNext;
             for (address in response.items) {
                 if (address !== leaseWallet) {
-                    addresses[address] = response.items[address];
-                    totalAssets += response.items[address];
+                    if (response.items[address] > minimumAmount) {
+                        addresses[address] = response.items[address];
+                    }
+                    totalDistributed += response.items[address];
                 }
             }
             first = false;
         }
-        return {addresses: addresses, totalDistributed: totalAssets};
+        return {addresses: addresses, totalDistributed: totalDistributed};
     },
     /**
      * Read all fees genereted by the given block

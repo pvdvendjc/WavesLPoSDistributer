@@ -214,16 +214,11 @@ var start = function() {
                             }
                             // Read richlist only if blocks are less then 2000 ago, else its a pitty for the tokenholders
                             if (blockChainBlock.height > (lastBlockHeight - 2000)) {
-                                var assetAddresses = wavesFunctions.getAssetDistributionAtBlock(assetHoldersPayment.id, blockChainBlock.height, config.paymentconfig.leasewallet);
-                                if (("minimumAmountInWallet" in assetHoldersPayment) && assetHoldersPayment.minimumAmountInWallet > 0) {
-                                    var newAssetAddresses = {};
-                                    for (address in assetAddresses.addresses) {
-                                        if (assetAddresses.addresses[address] >= assetHoldersPayment.minimumAmountInWallet * Math.pow(10, assetInfo[assetHoldersPayment.id].decimals)) {
-                                            newAssetAddresses[address] = assetAddresses.addresses[address];
-                                        }
-                                    }
-                                    assetAddresses.addresses = newAssetAddresses;
+                                if (!("minimumAmountInWallet" in assetHoldersPayment)) {
+                                    assetHoldersPayment.minimumAmountInWallet = 0;
                                 }
+                                minimumAmount = assetHoldersPayment.minimumAmountInWallet * Math.pow(10, assetInfo[assetHoldersPayment.id].decimals);
+                                var assetAddresses = wavesFunctions.getAssetDistributionAtBlock(assetHoldersPayment.id, blockChainBlock.height, config.paymentconfig.leasewallet, minimumAmount);
                                 newBlock[assetHoldersPayment.id] = assetAddresses;
                             } else {
                                 newBlock[assetHoldersPayment.id] = {addresses: {}, totalDistributed: 0};
