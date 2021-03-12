@@ -217,7 +217,11 @@ var start = function() {
                                 if (!("minimumAmountInWallet" in assetHoldersPayment)) {
                                     assetHoldersPayment.minimumAmountInWallet = 0;
                                 }
-                                minimumAmount = assetHoldersPayment.minimumAmountInWallet * Math.pow(10, assetInfo[assetHoldersPayment.id].decimals);
+                                if (assetHoldersPayment.checkMinimumAtMining) {
+                                    minimumAmount = assetHoldersPayment.minimumAmountInWallet * Math.pow(10, assetInfo[assetHoldersPayment.id].decimals);
+                                } else {
+                                    minimumAmount = 0;
+                                }
                                 var assetAddresses = wavesFunctions.getAssetDistributionAtBlock(assetHoldersPayment.id, blockChainBlock.height, config.paymentconfig.leasewallet, minimumAmount);
                                 newBlock[assetHoldersPayment.id] = assetAddresses;
                             } else {
